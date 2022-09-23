@@ -10,11 +10,14 @@
     <section class="container content">  
         <section class="center medium">
             <aside class="temp" id="filters" :style="{ top: isMobile ? isStandalone  ? '48px': '95px' : 'unset' }">
-                <h3 v-if="!isMobile">{{$t('search.filters.title')}}</h3>
+                <div class="header" v-if="!isMobile">
+                    <h3>{{$t('search.filters.title')}}</h3>
+                    <p class="remove-filters" v-if="anyActiveFilter" @click.prevent="removeAllFilters()"><a href="#">{{ $t('search.filters.clear') }}</a></p>
+                </div>
                 <section class="filter" :class="showFilters ? 'open' : 'closed'" v-click-outside="() => showFilters = false">
                     <div v-if="isMobile" class="header" @click="showFilters = !showFilters">
                         <h3>{{$t('search.filters.title')}}</h3>
-                        <p class="remove-filters" v-if="showFilters" @click="removeAllFilters()"><a href="#">{{ $t('search.filters.clear') }}</a></p>
+                        <p class="remove-filters" v-if="showFilters" @click.prevent="removeAllFilters()"><a href="#">{{ $t('search.filters.clear') }}</a></p>
                     </div>
                     <div class="filters-wrapper" v-if="!isMobile || showFilters">
                         <search-facet facetName="BookName"
@@ -28,7 +31,7 @@
                         <year-filter />
                         <section class="exact-match">
                             <p>{{$t('search.exact-match')}}</p>
-                            <input v-model="exactMatch" type="checkbox" name="search-exact-text">
+                            <input v-model="exactMatch" @click="updateExactMatch" type="checkbox" name="search-exact-text">
                         </section>
                     </div>
                 </section>
@@ -72,7 +75,6 @@ export default {
     data: function() {
         return {
             exactMatch: false,
-            initialized: false,
             width: null,
             showFilters: false
         }
@@ -84,7 +86,11 @@ export default {
             newExactMatch: 'newExactMatch'
         }),
         newSearchWithQuery() {
-            this.newSearch({ query: this.computedQuery, newFacets: true });
+            this.exactMatch = this.computedQueryFields.filters.exactMatch;
+            this.newSearch({ fields: this.computedQueryFields, newFacets: true });
+        },
+        updateExactMatch() {
+            this.newExactMatch(!this.exactMatch);
         },
         handleResize() {
             this.width = window.innerWidth;
@@ -117,22 +123,21 @@ export default {
             }
         },
         removeAllFilters() {
-            this.$store.state.search.searchParams.facets['AuthorFullName'] = [];
-            this.$store.state.search.searchParams.facets['BookName'] = [];
-            this.$store.state.search.searchParams.facets['Years'] = [];
+            this.$store.state.search.searchParams.facets.AuthorFullName = [];
+            this.$store.state.search.searchParams.facets.BookName = [];
+            this.$store.state.search.searchParams.facets.Years = [];
 
-            this.newSearch({ query: this.computedQuery, newFacets: false });
+            this.newSearch({ fields: { query: this.$route.params.query, filters: { facets: { Years: [] } } }, newFacets: true });
+            history.pushState(null, null, '?');
         }
     },
-    created: function() {     
-        this.initialized = false;
+    created: function() {
         window.addEventListener('resize', this.handleResize);
         window.addEventListener('scroll', this.handleScroll);
-        this.handleResize();  
-        this.exactMatch = this.$store.state.search.searchParams.exactMatch;
-        setTimeout(() => this.initialized = true, 200)
-        
-        if (this.computedQuery != this.searchParams.query)
+        this.handleResize();
+        this.exactMatch = this.computedQueryFields.filters.exactMatch;
+
+        if (this.computedQueryFields.query != this.searchParams.query)
             this.newSearchWithQuery();
 
         EventBus.$on(Events.CONTENT_LANGUAGE_CHANGED, () => this.newSearchWithQuery());
@@ -142,12 +147,8 @@ export default {
         window.removeEventListener('resize', this.handleResize);
     },
     watch: {
-        computedQuery: function() {
-            this.newSearchWithQuery();                   
-        },
-        exactMatch: function(val) {
-            if (this.initialized)
-                this.newExactMatch(val)
+        computedQueryFields: function() {
+            this.newSearchWithQuery();
         }
     },
     mixins: [DefaultMetaHeaderMixins],
@@ -155,12 +156,40 @@ export default {
         isMobile() {
             return this.width <= 768;
         },
+        anyActiveFilter() {
+            var searchParams = this.$store.state.search.searchParams;
+            var years = searchParams.facets.Years;
+            var defaultYears = !!years.length
+                ? ( years[0] == 1900 && years[1] == new Date().getFullYear() )
+                : true;
+
+            return searchParams.exactMatch != false
+                || !!searchParams.facets.BookName.length
+                || !!searchParams.facets.AuthorFullName.length
+                || !defaultYears;
+        },
         isStandalone() {
             return window.matchMedia('(display-mode: standalone)').matches
         },
-        computedQuery: function() {
-            return this.$route.params.query;                        
-        },     
+        computedQueryFields: function() {
+            var query = this.$route.params.query;
+            var bookName = this.$route.query.bookName;
+            var authorFullName = this.$route.query.authorFullName;
+            var years = this.$route.query.years;
+            var exactMatch = Boolean(this.$route.query.exactMatch);
+
+            return { 
+                query: query,
+                filters: {
+                    facets: {
+                        BookName: bookName ? decodeURI(bookName).split(',') : [],
+                        AuthorFullName: authorFullName ? decodeURI(authorFullName).split(',') : [],
+                        Years: years ? years.split('-') : [],
+                    },
+                    exactMatch: exactMatch
+                }
+            };
+        },         
         ...mapState('search', {
             searchId: 'id',
             searchParams: 'searchParams',
@@ -210,8 +239,7 @@ section.filter .filters-wrapper > section form {
     position: relative;
 }
 
-.filter .header {
-    padding: 16px;
+#filters .header {
     position: relative;
     display: flex;
 }
@@ -224,9 +252,18 @@ section.filter .filters-wrapper > section form {
     bottom: -2px;
     background-color: var(--base4);
 }
-
 .filter.open .header {
     padding-bottom: 12px;
+}
+
+.remove-filters {
+    align-self: center;
+    margin-left: auto;
+    font-size: 12px;
+    font-style: italic;
+}
+.remove-filters a {
+    text-decoration: none;
 }
 
 .filter input[type="text"] {
@@ -268,7 +305,7 @@ section.filter .filters-wrapper > section form {
     content: "";
     position: absolute;
     left: 0;
-    width: calc(100% - 15px);
+    width: calc(100% - 22px);
     height: 15px;
     z-index: 11;
 }
@@ -348,7 +385,7 @@ section.filter .filters-wrapper > section form {
     border-color: #6291EB;
 }
 
-@media screen and (min-width: 768px) {
+@media screen and (min-width: 769px) {
     #filters {
         width: 300px;
     }
@@ -358,8 +395,14 @@ section.filter .filters-wrapper > section form {
         margin-left: 20px;
     }
     
-    #filters + .list h3, #filters > h3 {
+    #filters + .list h3, #filters .header > h3 {
         margin-bottom: 20px;
+    }
+    #filters .remove-filters {
+        align-self: flex-start;
+        padding-right: 20px;
+        font-size: 14px;
+        margin-top: 3px;
     }
 }
 
@@ -379,7 +422,7 @@ section.filter .filters-wrapper > section form {
     }
     body[view="advanced-search"] .content .center aside.temp.pinned {
         position: sticky;
-        width: 100vw;
+        width: calc(100% + 32px);
         top: 95px;
         margin-left: -16px;
     }
@@ -418,14 +461,8 @@ section.filter .filters-wrapper > section form {
         filter: invert(100%);
     }
 
-    .remove-filters {
-        align-self: center;
-        margin-left: auto;
-        font-size: 12px;
-        font-style: italic;
-    }
-    .remove-filters a {
-        text-decoration: none;
+    #filters .header {
+        padding: 16px;
     }
 
     header ~ .container #filters.pinned {
