@@ -6,12 +6,10 @@ module.exports = {
         es6: true,
     },
     extends: ['plugin:vue/essential', 'plugin:promise/recommended', 'prettier'],
-    rules: {
-        'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-        'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    },
     parserOptions: {
         parser: 'babel-eslint',
+        ecmaVersion: 6,
+        sourceType: "module",
     },
     plugins: ['vue', 'promise'],
     rules: {
@@ -23,5 +21,7 @@ module.exports = {
         'promise/no-return-wrap': 'off',
         'promise/catch-or-return': 'off',
         'promise/no-nesting': 'off',
+        'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+        'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     },
 };

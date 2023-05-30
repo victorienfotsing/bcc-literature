@@ -2,6 +2,7 @@
     <div>
         <div class="chapter-header">
             <h5 :id="'chapter-title-' + article.chapterId">{{ $t('reader.chapter') }} {{ article.chapterId }}</h5>
+            <BookmarkButton v-if="featureFlags().Bookmark" :article="article" :bookTitle='bookTitle' />
             <TextToSpeechButton v-if="featureFlags().AudioOfArticles" :article="article" :audioBookUrl='audioBookUrl' :bookTitle='bookTitle' />
         </div>
         <div v-if="article.content != null" v-html="article.content" />
@@ -14,12 +15,14 @@
 import { mapState } from 'vuex';
 import DocumentViewer from './document-viewer';
 import TextToSpeechButton from './article-text-to-speech-btn'
+import BookmarkButton from './article-bookmark-btn'
 
 export default {
     props: ['article', 'highlight', 'audioBookUrl', 'bookTitle'],
     components: {
         DocumentViewer,
-        TextToSpeechButton
+        TextToSpeechButton,
+        BookmarkButton
     },
     mounted() {
         if (this.highlight != null && this.highlight.length > 0) {

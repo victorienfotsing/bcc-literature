@@ -1,0 +1,32 @@
+span.bookmark-icon {
+    margin: 0 0 8px 12px;
+    cursor: pointer;
+    z-index: 50;
+    float: right;
+    width: 32px;
+    height: 32px;
+}
+
+
+span.bookmark-icon.active-bookmark {
+    background: var(--white) url("/img/icon_24_bookmark_active.svg") 50% 50% no-repeat !important;
+    &:hover {
+        box-shadow: inset 0px 0px 0px 8px rgb(94 175 226 / 25%);
+    }
+}
+
+span.bookmark-icon.inactive-bookmark {
+    background: var(--white) url("/img/icon_24_bookmark.svg") 50% 50% no-repeat !important;
+    background-size: 22px 22px !important;
+    opacity: 0.2;
+    &:hover {
+        opacity: 0.6;
+    }
+}
+
+@media only screen and (max-width: 648px) {
+    .bookmark-icon {
+        float: right;
+        margin-top: -11px;
+    }
+}

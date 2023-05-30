@@ -137,7 +137,8 @@ export default {
     methods: {
         ...mapActions('books', {
             loadBook: 'load',
-            loadChapters: 'loadChapters'
+            loadChapters: 'loadChapters',
+            loadBookmarks: 'loadBookmarks'
         }),
         ...mapActions('articles', {
             loadChapter: 'loadChapter',
@@ -152,6 +153,7 @@ export default {
             this.notFound = false;
 
             await this.loadBook(this.bookId).then(async (book) => {
+                await this.loadBookmarks({userId: this.userId, bookId: this.bookId});
                 if (book.redirectToCorrectLanguage) {
                     let chapterId = parseInt(this.$route.params.chapterId);
                     this.$router.push({ name: 'read-publication', 

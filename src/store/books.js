@@ -1,4 +1,5 @@
 import BookApi from 'utils/api/bookApi';
+import BookmarkApi from 'utils/api/bookmarkApi';
 import base from './base.js';
 
 export default {
@@ -47,12 +48,30 @@ export default {
                         chapters: result.data
                     });
                     return;
-                })
+                });
         },
+        loadBookmarks: async ({commit, state}, {userId, bookId}) => {
+            return await BookmarkApi.getBookmarksByBookId(userId, bookId).then((result) => {
+                state.bookmarks = result.data;
+                if(!result.data) return [];
+                return result.data;
+            });
+        },
+        unBookmark: async ({commit, state}, {userId, bookId, chapterId}) => {
+            return await BookmarkApi.unBookmark(userId, bookId, chapterId).then((result) => {
+                return result.data;
+            });
+        },
+        bookmark: async ({commit, state}, {userId, bookId, chapterId}) => {
+            return await BookmarkApi.bookmark(userId, bookId, chapterId).then((result) => {
+                return result.data;
+            });
+        }
     },
     getters: {
         getAllByAuthorId: (state) => (authorId) => {
             return state.base.all.filter((i) => i.author != null && i.author.id == authorId);
         },
+        getBookmarkStatus: (state) => (id) => state.bookmarks ? state.bookmarks.some(val => val === id) : false,
     }
-}
+};

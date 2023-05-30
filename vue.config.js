@@ -10,7 +10,7 @@ module.exports = {
     },
     outputDir: "dist",
     devServer: {
-        host: "literature.local",
+        host: "localhost",
         port: 21535
     },
     pwa: {

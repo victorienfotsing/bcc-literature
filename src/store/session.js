@@ -11,7 +11,8 @@ export default {
         isAuthenticated: false,
         topbarInitialized: false,
         featureFlags: {
-            AudioOfArticles: false
+            AudioOfArticles: true,
+            Bookmark: true,
         }
     },
     mutations: {
@@ -46,6 +47,7 @@ export default {
     },
     getters: {
         isMinFontSize: (state) => state.fontSize <= MIN_FONT_SIZE,
-        isMaxFontSize: (state) => state.fontSize >= MAX_FONT_SIZE
+        isMaxFontSize: (state) => state.fontSize >= MAX_FONT_SIZE,
+        userId: (state) => state.userInfo ? state.userInfo.sub : undefined,
     }
 }
